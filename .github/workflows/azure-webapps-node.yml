@@ -7,6 +7,11 @@ on:
   push:
     branches: [ main ]
 
+# 自动设置权限 - 无需在GitHub Settings中手动配置
+permissions:
+  contents: write      # 允许写入仓库内容（提交、推送等）
+  actions: read        # 允许读取Actions
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -58,11 +63,14 @@ jobs:
       
       - name: 提交时间记录
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add time.txt
           if git diff --cached --quiet; then
-            echo "没有新的更改，跳过提交"
+            echo "✓ 没有新的更改，跳过提交"
           else
             git commit -m "自动记录部署运行时间 [$(date '+%Y-%m-%d %H:%M:%S')]"
             git push origin main
+            echo "✓ 时间记录已成功提交"
           fi
