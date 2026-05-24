@@ -5,6 +5,5 @@
   },
   "backend": {
     "platform": "node18"
-  },
-  "hash": "af750db2"
+  }
 }
