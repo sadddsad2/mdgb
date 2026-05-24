@@ -33,8 +33,11 @@ jobs:
         run: |
           mdb login --username "$MDBGO_USERNAME" --password "$MDBGO_PASSWORD"
       
+      - name: 安装系统依赖
+        run: sudo apt-get install -y xsel
+
       - name: 部署项目
-        run: mdb publish --no-clipboard
+        run: mdb publish
       
       - name: 部署成功
         if: success()
