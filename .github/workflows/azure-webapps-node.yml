@@ -36,8 +36,15 @@ jobs:
       - name: 安装系统依赖
         run: sudo apt-get install -y xsel
 
+      - name: 安装系统依赖
+        run: |
+          sudo apt-get install -y xsel xvfb
+
       - name: 部署项目
-        run: mdb publish
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 2
+          DISPLAY=:99 mdb publish
       
       - name: 部署成功
         if: success()
