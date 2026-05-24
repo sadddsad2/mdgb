@@ -2,13 +2,8 @@ name: 部署到MDBGO
 
 on:
   schedule:
-    # 每10天运行一次 (格式: 分 时 日 月 星期)
-    - cron: '0 0 */12 * *'
-  
-  # 允许手动触发工作流
+    - cron: '0 0 1,11,21 * *'  # 1st, 11th, 21st of each month
   workflow_dispatch:
-  
-  # 保留推送触发(可选)
   push:
     branches: [ main ]
 
@@ -16,35 +11,58 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: 设置Node.js环境
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
-      
-      - name: 安装依赖
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xsel xclip
-          
-      - name: 设置虚拟显示服务器
-        run: |
-          sudo apt-get install -y xvfb
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          sleep 3  # 给Xvfb一些启动时间
+          node-version: '18'
       
       - name: 安装MDBGO CLI
         run: npm install -g mdb-cli
       
       - name: 登录MDBGO
+        env:
+          MDBGO_USERNAME: ${{ secrets.MDBGO_USERNAME }}
+          MDBGO_PASSWORD: ${{ secrets.MDBGO_PASSWORD }}
         run: |
-          export DISPLAY=:99
-          mdb login --username ${{ secrets.MDBGO_USERNAME }} --password ${{ secrets.MDBGO_PASSWORD }}
+          mdb login --username "$MDBGO_USERNAME" --password "$MDBGO_PASSWORD"
       
       - name: 部署项目
+        run: mdb publish
+      
+      - name: 部署成功
+        if: success()
+        run: echo "✅ 项目已成功部署到MDBGO"
+      
+      - name: 部署失败通知
+        if: failure()
+        run: echo "❌ 部署失败,请检查日志"
+      
+      - name: 记录运行时间
+        if: always()
         run: |
-          export DISPLAY=:99
-          # 注意：确保您的应用配置为在端口3000上运行
-          mdb publish --no-clipboard || mdb publish
+          # 获取当前时间和状态
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          STATUS="${{ job.status }}"
+          TRIGGER="${{ github.event_name }}"
+          
+          # 格式化输出
+          echo "[$TIMESTAMP] 触发方式: $TRIGGER | 状态: $STATUS" >> time.txt
+      
+      - name: 配置Git用户信息
+        if: always()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+      
+      - name: 提交时间记录
+        if: always()
+        run: |
+          git add time.txt
+          if git diff --cached --quiet; then
+            echo "没有新的更改，跳过提交"
+          else
+            git commit -m "自动记录部署运行时间 [$(date '+%Y-%m-%d %H:%M:%S')]"
+            git push origin main
+          fi
