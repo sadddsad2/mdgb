@@ -1,0 +1,10 @@
+{
+  "projectName": "ech",
+  "meta": {
+    "type": "backend"
+  },
+  "backend": {
+    "platform": "node18"
+  },
+  "hash": "af750db7"
+}

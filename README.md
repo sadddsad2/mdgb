@@ -1,1 +1,5 @@
-# mdgb
+设置secret
+
+MDBGO_USERNAME
+
+MDBGO_PASSWORD
