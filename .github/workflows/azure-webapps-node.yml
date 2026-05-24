@@ -1,0 +1,50 @@
+name: 部署到MDBGO
+
+on:
+  schedule:
+    # 每10天运行一次 (格式: 分 时 日 月 星期)
+    - cron: '0 0 */12 * *'
+  
+  # 允许手动触发工作流
+  workflow_dispatch:
+  
+  # 保留推送触发(可选)
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: 设置Node.js环境
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+      
+      - name: 安装依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xsel xclip
+          
+      - name: 设置虚拟显示服务器
+        run: |
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3  # 给Xvfb一些启动时间
+      
+      - name: 安装MDBGO CLI
+        run: npm install -g mdb-cli
+      
+      - name: 登录MDBGO
+        run: |
+          export DISPLAY=:99
+          mdb login --username ${{ secrets.MDBGO_USERNAME }} --password ${{ secrets.MDBGO_PASSWORD }}
+      
+      - name: 部署项目
+        run: |
+          export DISPLAY=:99
+          # 注意：确保您的应用配置为在端口3000上运行
+          mdb publish --no-clipboard || mdb publish
