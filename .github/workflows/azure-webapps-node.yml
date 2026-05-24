@@ -34,7 +34,7 @@ jobs:
           mdb login --username "$MDBGO_USERNAME" --password "$MDBGO_PASSWORD"
       
       - name: 部署项目
-        run: mdb publish
+        run: mdb publish --no-clipboard
       
       - name: 部署成功
         if: success()
